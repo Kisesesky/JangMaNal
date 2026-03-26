@@ -1,0 +1,16 @@
+{
+  "name": "jangmanal",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api run start:dev",
+    "dev:crawler": "cd apps/crawler && ./.venv/bin/python3 -m mart_crawler crawl --mart all",
+    "lint:web": "npm --prefix apps/web run lint",
+    "test:api": "npm --prefix apps/api run test -- --runInBand"
+  }
+}

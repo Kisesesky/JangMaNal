@@ -1,0 +1,18 @@
+# Python crawler
+apps/crawler/.venv/
+apps/crawler/**/__pycache__/
+apps/crawler/**/*.pyc
+apps/crawler/products.db
+apps/crawler/logs/
+
+# Node apps
+node_modules/
+apps/web/node_modules/
+apps/web/.next/
+apps/web/.git/
+apps/api/node_modules/
+apps/api/dist/
+apps/api/coverage/
+
+# Root env
+.env

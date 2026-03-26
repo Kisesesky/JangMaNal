@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "/Users/hoya/workspace/JangMaNal/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "/Users/hoya/workspace/JangMaNal"
+  ]
+}

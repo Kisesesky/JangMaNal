@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hoya.jangmanal.crawler.marketkurly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/hoya/workspace/JangMaNal/apps/crawler/scripts/run_crawler_daily.sh</string>
+    <string>marketkurly</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/hoya/workspace/JangMaNal/apps/crawler</string>
+  <key>StandardOutPath</key>
+  <string>/Users/hoya/workspace/JangMaNal/apps/crawler/logs/launchd-marketkurly.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/hoya/workspace/JangMaNal/apps/crawler/logs/launchd-marketkurly.err.log</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>25</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
