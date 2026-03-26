@@ -3,35 +3,27 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { SocialLoginDto } from '../dto/social-login.dto';
-import {
-  VerificationCodeEntity,
-  VerificationPurpose,
-} from '../entities/verification-code.entity';
+import { VerificationPurpose } from '../entities/verification-code.entity';
 import { AUTH_CONSTANTS } from '../constants/auth.constants';
 import { hashPassword, verifyPassword } from '../utils/password.util';
 import { generateNumericCode } from 'src/modules/mail/utils/random-code.util';
 import { MailService } from 'src/modules/mail/service/mail.service';
 import { ForgotPasswordResetDto } from '../dto/forgot-password-reset.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
-import { SocialAccountEntity } from '../entities/social-account.entity';
 import { UsersService } from 'src/modules/users/service/users.service';
 import { DEFAULT_PROFILE_IMAGE } from 'src/modules/users/constants/default-profile-image.constant';
 import { OAuthProfile } from '../type/oauth-profile.type';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { AuthStoreService } from './auth-store.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(VerificationCodeEntity)
-    private readonly verificationRepository: Repository<VerificationCodeEntity>,
-    @InjectRepository(SocialAccountEntity)
-    private readonly socialAccountRepository: Repository<SocialAccountEntity>,
+    private readonly authStoreService: AuthStoreService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
@@ -57,15 +49,13 @@ export class AuthService {
       Date.now() + AUTH_CONSTANTS.emailCodeExpireMinutes * 60 * 1000,
     );
 
-    const entity = this.verificationRepository.create({
+    await this.authStoreService.createVerificationCode({
       email,
       purpose,
       code,
       expiresAt,
-      verified: false,
     });
 
-    await this.verificationRepository.save(entity);
     await this.mailService.sendEmailCode(email, code, purpose);
     return { sent: true };
   }
@@ -75,9 +65,10 @@ export class AuthService {
     purpose: VerificationPurpose,
     code: string,
   ): Promise<{ verified: boolean }> {
-    const row = await this.verificationRepository.findOne({
-      where: { email, purpose, code },
-      order: { createdAt: 'DESC' },
+    const row = await this.authStoreService.findVerificationCode({
+      email,
+      purpose,
+      code,
     });
 
     if (!row || row.expiresAt < new Date()) {
@@ -86,11 +77,10 @@ export class AuthService {
       );
     }
 
-    row.verified = true;
-    await this.verificationRepository.save(row);
+    await this.authStoreService.markVerificationCodeVerified(row);
 
     if (purpose === 'signup') {
-      await this.usersService.markEmailVerifiedByEmail(email);
+      await this.usersService.markEmailVerifiedByEmail({ email });
     }
 
     return { verified: true };
@@ -100,9 +90,9 @@ export class AuthService {
     email: string,
     purpose: VerificationPurpose,
   ): Promise<void> {
-    const row = await this.verificationRepository.findOne({
-      where: { email, purpose, verified: true },
-      order: { createdAt: 'DESC' },
+    const row = await this.authStoreService.findVerifiedCode({
+      email,
+      purpose,
     });
 
     if (!row || row.expiresAt < new Date()) {
@@ -120,7 +110,7 @@ export class AuthService {
 
     await this.assertVerified(dto.email, 'signup');
 
-    const exists = await this.usersService.findByEmail(dto.email);
+    const exists = await this.usersService.findByEmail({ email: dto.email });
     if (exists) {
       throw new BadRequestException('이미 가입된 이메일입니다.');
     }
@@ -137,7 +127,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmail({ email: dto.email });
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException(
         '이메일 또는 비밀번호가 올바르지 않습니다.',
@@ -155,9 +145,9 @@ export class AuthService {
   }
 
   async socialLogin(dto: SocialLoginDto) {
-    let socialAccount = await this.socialAccountRepository.findOne({
-      where: { provider: dto.provider, providerUserId: dto.providerUserId },
-      relations: { user: true },
+    const socialAccount = await this.authStoreService.findSocialAccount({
+      provider: dto.provider,
+      providerUserId: dto.providerUserId,
     });
 
     let user: UserEntity;
@@ -166,19 +156,18 @@ export class AuthService {
       user = socialAccount.user;
     } else {
       user =
-        (await this.usersService.findByEmail(dto.email)) ||
+        (await this.usersService.findByEmail({ email: dto.email })) ||
         (await this.usersService.createSocialUser({
           email: dto.email,
           name: dto.name,
           profileImageUrl: dto.profileImageUrl || DEFAULT_PROFILE_IMAGE,
         }));
 
-      socialAccount = this.socialAccountRepository.create({
+      await this.authStoreService.createSocialAccount({
         provider: dto.provider,
         providerUserId: dto.providerUserId,
         userId: user.id,
       });
-      await this.socialAccountRepository.save(socialAccount);
     }
 
     return this.buildAuthResult(user);
@@ -204,15 +193,15 @@ export class AuthService {
     }
     await this.assertVerified(dto.email, 'password_reset');
 
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmail({ email: dto.email });
     if (!user) {
       throw new BadRequestException('가입된 이메일이 아닙니다.');
     }
 
-    await this.usersService.updatePassword(
-      user.id,
-      await hashPassword(dto.newPassword),
-    );
+    await this.usersService.updatePassword({
+      userId: user.id,
+      passwordHash: await hashPassword(dto.newPassword),
+    });
     return { changed: true };
   }
 
@@ -230,10 +219,10 @@ export class AuthService {
     const user = await this.usersService.getById(userId);
     await this.verifyEmailCode(user.email, 'password_change', dto.code);
 
-    await this.usersService.updatePassword(
+    await this.usersService.updatePassword({
       userId,
-      await hashPassword(dto.newPassword),
-    );
+      passwordHash: await hashPassword(dto.newPassword),
+    });
 
     return {
       changed: true,

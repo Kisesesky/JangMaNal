@@ -12,6 +12,7 @@ import { SocialAccountEntity } from './entities/social-account.entity';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { NaverStrategy } from './strategies/naver.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
+import { AuthStoreService } from './service/auth-store.service';
 import { EnvConfigService } from 'src/config/env-config.service';
 import { AppConfigModule } from 'src/config/app-config.module';
 
@@ -32,6 +33,7 @@ import { AppConfigModule } from 'src/config/app-config.module';
   ],
   controllers: [AuthController],
   providers: [
+    AuthStoreService,
     AuthService,
     JwtStrategy,
     GoogleStrategy,

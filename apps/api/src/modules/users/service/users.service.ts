@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { UserRole } from '../type/user-role.type';
+import { CreateLocalUserDto } from '../dto/create-local-user.dto';
+import { CreateSocialUserDto } from '../dto/create-social-user.dto';
+import { UpdateUserPasswordDto } from '../dto/update-password.dto';
+import { FindUserByEmailDto } from '../dto/find-user-by-email.dto';
+import { MarkEmailVerifiedDto } from '../dto/mark-email-verified.dto';
 
 @Injectable()
 export class UsersService {
@@ -20,17 +25,11 @@ export class UsersService {
     return user;
   }
 
-  findByEmail(email: string): Promise<UserEntity | null> {
-    return this.usersRepository.findOne({ where: { email } });
+  findByEmail(dto: FindUserByEmailDto): Promise<UserEntity | null> {
+    return this.usersRepository.findOne({ where: { email: dto.email } });
   }
 
-  async createLocalUser(input: {
-    email: string;
-    name: string;
-    phoneNumber: string;
-    profileImageUrl: string;
-    passwordHash: string;
-  }): Promise<UserEntity> {
+  async createLocalUser(input: CreateLocalUserDto): Promise<UserEntity> {
     const user = this.usersRepository.create({
       ...input,
       emailVerified: true,
@@ -39,11 +38,7 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async createSocialUser(input: {
-    email: string;
-    name: string;
-    profileImageUrl: string;
-  }): Promise<UserEntity> {
+  async createSocialUser(input: CreateSocialUserDto): Promise<UserEntity> {
     const user = this.usersRepository.create({
       email: input.email,
       name: input.name,
@@ -56,17 +51,14 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async updatePassword(
-    userId: string,
-    passwordHash: string,
-  ): Promise<UserEntity> {
-    const user = await this.getById(userId);
-    user.passwordHash = passwordHash;
+  async updatePassword(dto: UpdateUserPasswordDto): Promise<UserEntity> {
+    const user = await this.getById(dto.userId);
+    user.passwordHash = dto.passwordHash;
     return this.usersRepository.save(user);
   }
 
-  async markEmailVerifiedByEmail(email: string): Promise<void> {
-    const user = await this.findByEmail(email);
+  async markEmailVerifiedByEmail(dto: MarkEmailVerifiedDto): Promise<void> {
+    const user = await this.findByEmail({ email: dto.email });
     if (!user) return;
     user.emailVerified = true;
     await this.usersRepository.save(user);
