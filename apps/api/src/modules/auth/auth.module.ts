@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './service/auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -13,19 +12,21 @@ import { SocialAccountEntity } from './entities/social-account.entity';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { NaverStrategy } from './strategies/naver.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
+import { EnvConfigService } from 'src/config/env-config.service';
+import { AppConfigModule } from 'src/config/app-config.module';
 
 @Module({
   imports: [
-    ConfigModule,
+    AppConfigModule,
     UsersModule,
     MailModule,
     PassportModule.register({ session: false }),
     TypeOrmModule.forFeature([VerificationCodeEntity, SocialAccountEntity]),
     JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'jangmanal-dev-secret'),
-        signOptions: { expiresIn: '1d' },
+      inject: [EnvConfigService],
+      useFactory: (envConfigService: EnvConfigService) => ({
+        secret: envConfigService.jwtSecret,
+        signOptions: { expiresIn: envConfigService.jwtExpiresIn },
       }),
     }),
   ],

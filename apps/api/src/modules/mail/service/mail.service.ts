@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer';
 import { EmailPurpose } from '../type/email-purpose.type';
+import { EnvConfigService } from 'src/config/env-config.service';
 import { MAIL_CONSTANTS } from '../constants/mail.constants';
 
 @Injectable()
@@ -10,20 +10,18 @@ export class MailService {
   private readonly transporter: Transporter;
   private readonly fromAddress: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.fromAddress = this.configService.get<string>(
-      'MAIL_FROM',
-      MAIL_CONSTANTS.from,
-    );
+  constructor(private readonly envConfigService: EnvConfigService) {
+    const mail = this.envConfigService.mail;
+    this.fromAddress = mail.from;
 
     this.transporter = createTransport({
-      host: this.configService.get<string>('SMTP_HOST', 'localhost'),
-      port: Number(this.configService.get<string>('SMTP_PORT', '587')),
-      secure: this.configService.get<string>('SMTP_SECURE', 'false') === 'true',
-      auth: this.configService.get<string>('SMTP_USER')
+      host: mail.smtpHost,
+      port: mail.smtpPort,
+      secure: mail.smtpSecure,
+      auth: mail.smtpUser
         ? {
-            user: this.configService.get<string>('SMTP_USER'),
-            pass: this.configService.get<string>('SMTP_PASS'),
+            user: mail.smtpUser,
+            pass: mail.smtpPass,
           }
         : undefined,
     });
