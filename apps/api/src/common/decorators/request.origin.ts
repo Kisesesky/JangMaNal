@@ -6,7 +6,8 @@ export const RequestOrigin = createParamDecorator(
   (_: unknown, ctx: ExecutionContext): string => {
     const request = ctx.switchToHttp().getRequest<Request>();
     return (
-      request.headers.origin ?? `${request.protocol}://${request.get('host')}`
+      request.headers.origin ?? 
+      `${request.protocol}://${request.get('host')}`
     );
   },
 );

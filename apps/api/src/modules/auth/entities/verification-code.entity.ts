@@ -1,10 +1,6 @@
 import { Column, Entity, UpdateDateColumn } from 'typeorm';
 import { BaseEntity } from 'src/common/entities/base.entity';
-
-export type VerificationPurpose =
-  | 'signup'
-  | 'password_reset'
-  | 'password_change';
+import type { VerificationPurpose } from '../constants/verification-purpost.type';
 
 @Entity('verification_codes')
 export class VerificationCodeEntity extends BaseEntity {
