@@ -15,6 +15,7 @@ import { AppConfigService } from './config.service';
         JWT_REFRESH_EXPIRES_IN: Joi.number().required(),
         PORT: Joi.number().required(),
         FRONTEND_BASE_URL: Joi.string().required(),
+        DEFAULT_PROFILE_IMAGE: Joi.string().required(),
       }),
       isGlobal: true,
     }),

@@ -7,4 +7,5 @@ export default registerAs('app', () => ({
   jwtRefreshExpiresIn: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '604800', 10),
   port: parseInt(process.env.PORT || '3001', 10),
   frontendBaseUrl: process.env.FRONTEND_BASE_URL,
+  defaultProfileImage: process.env.DEFAULT_PROFILE_IMAGE,
 }));

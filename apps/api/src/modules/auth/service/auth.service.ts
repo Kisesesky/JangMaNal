@@ -13,11 +13,11 @@ import { MailService } from 'src/modules/mail/service/mail.service';
 import { ForgotPasswordResetDto } from '../dto/forgot-password-reset.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { UsersService } from 'src/modules/users/service/users.service';
-import { DEFAULT_PROFILE_IMAGE } from 'src/modules/users/constants/default-profile-image.constant';
 import { OAuthProfile } from '../type/oauth-profile.type';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { AuthStoreService } from './auth-store.service';
 import { VerificationPurpose } from '../constants/verification-purpost.type';
+import { AppConfigService } from 'src/config/app/config.service';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +26,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly appConfigService: AppConfigService,
   ) { }
 
   private signToken(user: UserEntity): string {
@@ -120,7 +121,7 @@ export class AuthService {
       email: dto.email,
       name: dto.name,
       phoneNumber: dto.phoneNumber,
-      profileImageUrl: dto.profileImageUrl || DEFAULT_PROFILE_IMAGE,
+      profileImageUrl: dto.profileImageUrl || this.appConfigService.defaultProfileImage as string,
       passwordHash: await hashPassword(dto.password),
     });
 
@@ -161,7 +162,7 @@ export class AuthService {
         (await this.usersService.createSocialUser({
           email: dto.email,
           name: dto.name,
-          profileImageUrl: dto.profileImageUrl || DEFAULT_PROFILE_IMAGE,
+          profileImageUrl: dto.profileImageUrl || this.appConfigService.defaultProfileImage as string,
         }));
 
       await this.authStoreService.createSocialAccount({

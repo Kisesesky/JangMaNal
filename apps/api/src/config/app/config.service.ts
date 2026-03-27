@@ -17,7 +17,7 @@ export class AppConfigService {
   get jwtRefreshSecret() {
     return this.configService.get<string>('app.jwtRefreshSecret');
   }
-  
+
   get jwtRefreshExpiresIn() {
     return this.configService.get<number>('app.jwtRefreshExpiresIn');
   }
@@ -28,5 +28,9 @@ export class AppConfigService {
 
   get frontendBaseUrl() {
     return this.configService.get<string>('app.frontendBaseUrl');
+  }
+
+  get defaultProfileImage() {
+    return this.configService.get<string>('app.defaultProfileImage');
   }
 }
