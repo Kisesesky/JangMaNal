@@ -7,8 +7,6 @@ import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { SocialLoginDto } from '../dto/social-login.dto';
-import { VerificationPurpose } from '../entities/verification-code.entity';
-import { AUTH_CONSTANTS } from '../constants/auth.constants';
 import { hashPassword, verifyPassword } from '../utils/password.util';
 import { generateNumericCode } from 'src/modules/mail/utils/random-code.util';
 import { MailService } from 'src/modules/mail/service/mail.service';
@@ -19,6 +17,7 @@ import { DEFAULT_PROFILE_IMAGE } from 'src/modules/users/constants/default-profi
 import { OAuthProfile } from '../type/oauth-profile.type';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { AuthStoreService } from './auth-store.service';
+import { VerificationPurpose } from '../constants/verification-purpost.type';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +26,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   private signToken(user: UserEntity): string {
     return this.jwtService.sign({ sub: user.id, email: user.email });
@@ -44,9 +43,11 @@ export class AuthService {
     email: string,
     purpose: VerificationPurpose,
   ): Promise<{ sent: boolean }> {
-    const code = generateNumericCode(AUTH_CONSTANTS.emailCodeLength);
+    const emailCodeLength = 6;
+    const emailCodeExpireMinutes = 10;
+    const code = generateNumericCode(emailCodeLength);
     const expiresAt = new Date(
-      Date.now() + AUTH_CONSTANTS.emailCodeExpireMinutes * 60 * 1000,
+      Date.now() + emailCodeExpireMinutes * 60 * 1000,
     );
 
     await this.authStoreService.createVerificationCode({
@@ -108,7 +109,7 @@ export class AuthService {
       throw new BadRequestException('비밀번호 확인이 일치하지 않습니다.');
     }
 
-    await this.assertVerified(dto.email, 'signup');
+    await this.assertVerified(dto.email, VerificationPurpose.SIGNUP);
 
     const exists = await this.usersService.findByEmail({ email: dto.email });
     if (exists) {
@@ -184,14 +185,14 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string) {
-    return this.sendEmailCode(email, 'password_reset');
+    return this.sendEmailCode(email, VerificationPurpose.PASSWORD_RESET);
   }
 
   async resetPassword(dto: ForgotPasswordResetDto) {
     if (dto.newPassword !== dto.newPasswordConfirm) {
       throw new BadRequestException('새 비밀번호 확인이 일치하지 않습니다.');
     }
-    await this.assertVerified(dto.email, 'password_reset');
+    await this.assertVerified(dto.email, VerificationPurpose.PASSWORD_RESET);
 
     const user = await this.usersService.findByEmail({ email: dto.email });
     if (!user) {
@@ -207,7 +208,7 @@ export class AuthService {
 
   async requestPasswordChange(userId: string) {
     const user = await this.usersService.getById(userId);
-    await this.sendEmailCode(user.email, 'password_change');
+    await this.sendEmailCode(user.email, VerificationPurpose.PASSWORD_CHANGE);
     return { sent: true };
   }
 
@@ -217,7 +218,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.getById(userId);
-    await this.verifyEmailCode(user.email, 'password_change', dto.code);
+    await this.verifyEmailCode(user.email, VerificationPurpose.PASSWORD_CHANGE, dto.code);
 
     await this.usersService.updatePassword({
       userId,

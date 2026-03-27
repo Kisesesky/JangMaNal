@@ -2,16 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { OAuthProfile } from '../type/oauth-profile.type';
-import { EnvConfigService } from 'src/config/env-config.service';
+import { SocialConfigService } from 'src/config/social/config.service';
+import { SocialProvider } from '../constants/social-provider.type';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(envConfigService: EnvConfigService) {
-    const oauth = envConfigService.oauth('google');
+  constructor(
+    socialConfigService: SocialConfigService
+  ) {
     super({
-      clientID: oauth.clientId,
-      clientSecret: oauth.clientSecret,
-      callbackURL: oauth.callbackUrl,
+      clientID: socialConfigService.googleClientId as string,
+      clientSecret: socialConfigService.googleClientSecret as string,
+      callbackURL: socialConfigService.googleCallbackUrl as string,
       scope: ['profile', 'email'],
     });
   }
@@ -28,7 +30,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): void {
     const user: OAuthProfile = {
-      provider: 'google',
+      provider: SocialProvider.GOOGLE,
       providerUserId: profile.id,
       email: profile.emails?.[0]?.value || '',
       name: profile.displayName || 'Google User',

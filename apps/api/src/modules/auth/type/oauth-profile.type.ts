@@ -1,4 +1,4 @@
-import { SocialProvider } from './social-provider.type';
+import { SocialProvider } from '../constants/social-provider.type';
 
 export type OAuthProfile = {
   provider: SocialProvider;

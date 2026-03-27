@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  VerificationCodeEntity,
-  VerificationPurpose,
-} from '../entities/verification-code.entity';
+import { VerificationCodeEntity } from '../entities/verification-code.entity';
 import { SocialAccountEntity } from '../entities/social-account.entity';
+import { VerificationPurpose } from '../constants/verification-purpost.type';
+import { SocialProvider } from '../constants/social-provider.type';
 
 @Injectable()
 export class AuthStoreService {
@@ -14,7 +13,7 @@ export class AuthStoreService {
     private readonly verificationRepository: Repository<VerificationCodeEntity>,
     @InjectRepository(SocialAccountEntity)
     private readonly socialAccountRepository: Repository<SocialAccountEntity>,
-  ) {}
+  ) { }
 
   createVerificationCode(input: {
     email: string;
@@ -56,7 +55,7 @@ export class AuthStoreService {
   }
 
   findSocialAccount(input: {
-    provider: 'google' | 'naver' | 'kakao';
+    provider: SocialProvider;
     providerUserId: string;
   }) {
     return this.socialAccountRepository.findOne({
@@ -66,7 +65,7 @@ export class AuthStoreService {
   }
 
   async createSocialAccount(input: {
-    provider: 'google' | 'naver' | 'kakao';
+    provider: SocialProvider;
     providerUserId: string;
     userId: string;
   }): Promise<void> {

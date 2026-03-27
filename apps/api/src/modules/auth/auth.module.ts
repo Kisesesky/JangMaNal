@@ -13,23 +13,31 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { NaverStrategy } from './strategies/naver.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
 import { AuthStoreService } from './service/auth-store.service';
-import { EnvConfigService } from 'src/config/env-config.service';
-import { AppConfigModule } from 'src/config/app-config.module';
+import { AppConfigService } from 'src/config/app/config.service';
+import { AppConfigModule } from 'src/config/app/config.module';
 
 @Module({
   imports: [
     AppConfigModule,
     UsersModule,
     MailModule,
-    PassportModule.register({ session: false }),
     TypeOrmModule.forFeature([VerificationCodeEntity, SocialAccountEntity]),
     JwtModule.registerAsync({
-      inject: [EnvConfigService],
-      useFactory: (envConfigService: EnvConfigService) => ({
-        secret: envConfigService.jwtSecret,
-        signOptions: { expiresIn: envConfigService.jwtExpiresIn },
-      }),
+      imports: [AppConfigModule],
+      useFactory: (appConfigService: AppConfigService) => {
+        if (!appConfigService.jwtSecret || !appConfigService.jwtExpiresIn) {
+          throw new Error('JWT 설정이 올바르지 않습니다.');
+        }
+        return {
+          secret: appConfigService.jwtSecret,
+          signOptions: { 
+            expiresIn: appConfigService.jwtExpiresIn,
+          },
+        };
+      },
+      inject: [AppConfigService],
     }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [AuthController],
   providers: [

@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-kakao';
 import { OAuthProfile } from '../type/oauth-profile.type';
-import { EnvConfigService } from 'src/config/env-config.service';
+import { SocialConfigService } from 'src/config/social/config.service';
+import { SocialProvider } from '../constants/social-provider.type';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
-  constructor(envConfigService: EnvConfigService) {
-    const oauth = envConfigService.oauth('kakao');
+  constructor(socialConfigService: SocialConfigService) {
     super({
-      clientID: oauth.clientId,
-      clientSecret: oauth.clientSecret,
-      callbackURL: oauth.callbackUrl,
+      clientID: socialConfigService.kakaoClientId as string,
+      clientSecret: socialConfigService.kakaoClientSecret as string,
+      callbackURL: socialConfigService.kakaoCallbackUrl as string,
     });
   }
 
@@ -29,7 +29,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     done: (error: unknown, user?: OAuthProfile) => void,
   ): void {
     const user: OAuthProfile = {
-      provider: 'kakao',
+      provider: SocialProvider.KAKAO,
       providerUserId: profile.id,
       email: profile._json?.kakao_account?.email || '',
       name:
